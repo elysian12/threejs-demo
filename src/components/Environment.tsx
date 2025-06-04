@@ -14,11 +14,11 @@ const Environment = () => {
   
   return (
     <group>
-      {/* Ground */}
+      {/* Main Ground */}
       <mesh 
         ref={groundRef} 
         rotation={[-Math.PI / 2, 0, 0]} 
-        position={[0, 0, 0]}
+        position={[0, 0.01, 0]}
         receiveShadow
       >
         <planeGeometry args={[100, 250]} />
@@ -29,18 +29,46 @@ const Environment = () => {
           color="#a9a9a9"
         />
       </mesh>
+      {/* Left Side Ground Fill */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[-70, 0.01, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[40, 250]} />
+        <meshStandardMaterial 
+          map={groundTexture}
+          roughness={1}
+          metalness={0}
+          color="#a9a9a9"
+        />
+      </mesh>
+      {/* Right Side Ground Fill */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[70, 0.01, 0]}
+        receiveShadow
+      >
+        <planeGeometry args={[40, 250]} />
+        <meshStandardMaterial 
+          map={groundTexture}
+          roughness={1}
+          metalness={0}
+          color="#a9a9a9"
+        />
+      </mesh>
       
       {/* Rest of the environment components */}
-      <GuardTower position={[-40, 0, -40]} />
-      <GuardTower position={[40, 0, -40]} />
-      <GuardTower position={[-40, 0, 40]} />
-      <GuardTower position={[40, 0, 40]} />
+      <GuardTower position={[-40, -5, -40]} />
+      <GuardTower position={[40, -5, -40]} />
+      <GuardTower position={[-40, -5, 40]} />
+      <GuardTower position={[40, -5, 40]} />
       
       {/* Walls */}
       <Wall position={[-50, 10, 0]} rotation={[0, Math.PI / 2, 0]} />
       <Wall position={[50, 10, 0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Wall position={[0, 10, -125]} rotation={[0, 0, 0]} />
-      <Wall position={[0, 10, 125]} rotation={[0, Math.PI, 0]} />
+      <Wall position={[0, 10, -80]} rotation={[0, 0, 0]} />
+      <Wall position={[0, 10, 80]} rotation={[0, Math.PI, 0]} />
       
       {/* Finish Line */}
       <mesh

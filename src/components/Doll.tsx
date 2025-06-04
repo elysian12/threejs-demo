@@ -15,6 +15,7 @@ const Doll: React.FC<DollProps> = ({ position }) => {
   const turnTimer = useRef(0);
   const [rotationDirection, setRotationDirection] = useState(1);
   const { gameState, setDollLooking } = useGameContext();
+  const [flash, setFlash] = useState<null | 'red' | 'green'>(null);
   
   // Play green light audio once
   const playGreenLight = useCallback(() => {
@@ -64,10 +65,14 @@ const Doll: React.FC<DollProps> = ({ position }) => {
         if (!gameState.isDollLooking) {
           // Turning to red light
           playRedLight();
+          setFlash('red');
+          setTimeout(() => setFlash(null), 200);
         } else {
           // Turning to green light
           stopRedLight();
           playGreenLight();
+          setFlash('green');
+          setTimeout(() => setFlash(null), 200);
         }
         turnTimer.current = 0; // Reset timer
       }
@@ -108,7 +113,7 @@ const Doll: React.FC<DollProps> = ({ position }) => {
       <group ref={headRef} position={[0, 5.5, 0]}>
         <mesh castShadow>
           <sphereGeometry args={[1.2, 32, 32]} />
-          <meshStandardMaterial color="#ffe4c4" />
+          <meshStandardMaterial color="#ffe4c4" emissive={flash === 'red' ? '#ff0000' : flash === 'green' ? '#00ff00' : '#000000'} emissiveIntensity={flash ? 1 : 0} />
         </mesh>
         
         {/* Eyes */}

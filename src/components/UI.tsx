@@ -1,12 +1,28 @@
 import React from 'react';
-import { Play, Pause, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Play, RotateCcw, ArrowUp, Camera } from 'lucide-react';
 import { useGameContext } from '../context/GameContext';
 
-const UI = () => {
+interface UIProps {
+  onToggleCamera: () => void;
+  cameraMode: 'character' | 'world';
+}
+
+const UI: React.FC<UIProps> = ({ onToggleCamera, cameraMode }) => {
   const { gameState, startGame, resetGame, movePlayer, stopPlayer } = useGameContext();
   
   return (
     <div className="ui-overlay flex flex-col items-center justify-between p-6">
+      {/* Camera Toggle Button */}
+      <div className="fixed top-4 right-4 z-50">
+        <button
+          onClick={onToggleCamera}
+          className="btn bg-white bg-opacity-80 hover:bg-opacity-100 text-black font-bold py-2 px-4 rounded shadow"
+        >
+          <Camera className="inline-block mr-2" size={20} />
+          {cameraMode === 'character' ? 'World View' : 'Character View'}
+        </button>
+      </div>
+      
       {/* Title */}
       <div className="w-full flex justify-center">
         <h1 className="game-title text-4xl md:text-5xl text-white mb-4">
@@ -41,9 +57,9 @@ const UI = () => {
       {gameState.isPlaying && !gameState.isGameOver && (
         <div className="mobile-controls flex-col items-center fixed bottom-8 left-0 right-0 mx-auto">
           <button
-            onTouchStart={movePlayer}
+            onTouchStart={() => movePlayer('forward')}
             onTouchEnd={stopPlayer}
-            onMouseDown={movePlayer}
+            onMouseDown={() => movePlayer('forward')}
             onMouseUp={stopPlayer}
             className="control-btn w-16 h-16 flex items-center justify-center rounded-full"
           >

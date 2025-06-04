@@ -39,14 +39,6 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position }, ref) => {
           case 'arrowdown':
             movePlayer('backward');
             break;
-          case 'a':
-          case 'arrowleft':
-            movePlayer('left');
-            break;
-          case 'd':
-          case 'arrowright':
-            movePlayer('right');
-            break;
         }
       }
     };
@@ -56,12 +48,8 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position }, ref) => {
         switch (e.key.toLowerCase()) {
           case 'w':
           case 's':
-          case 'a':
-          case 'd':
           case 'arrowup':
           case 'arrowdown':
-          case 'arrowleft':
-          case 'arrowright':
             stopPlayer();
             break;
         }
@@ -78,7 +66,12 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position }, ref) => {
   }, [gameState.isPlaying, gameState.isGameOver, gameState.isDollLooking, movePlayer, stopPlayer]);
   
   useFrame((_, delta) => {
-    if (!groupRef.current || !gameState.isPlaying || gameState.isGameOver || gameState.isDollLooking) return;
+    if (!groupRef.current || !gameState.isPlaying || gameState.isGameOver || gameState.isDollLooking) {
+      if (groupRef.current) {
+        groupRef.current.position.y = position[1]; // Always keep above ground
+      }
+      return;
+    }
 
     if (gameState.isMoving) {
       const speed = 5;
@@ -91,12 +84,6 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position }, ref) => {
         case 'backward':
           groupRef.current.position.z += movement;
           break;
-        case 'left':
-          groupRef.current.position.x -= movement;
-          break;
-        case 'right':
-          groupRef.current.position.x += movement;
-          break;
       }
       
       // Update player position in game state
@@ -104,7 +91,7 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position }, ref) => {
       
       // Animate walking
       const time = Date.now() * 0.005;
-      const height = Math.sin(time) * 0.1;
+      const height = Math.max(0, Math.sin(time) * 0.1);
       groupRef.current.position.y = position[1] + height;
       
       // Play footstep sound

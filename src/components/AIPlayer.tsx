@@ -25,7 +25,12 @@ const AIPlayer: React.FC<AIPlayerProps> = ({ position, color, index }) => {
   }, [position]);
 
   useFrame((_, delta) => {
-    if (!groupRef.current || !gameState.isPlaying || gameState.isGameOver || isEliminated) return;
+    if (!groupRef.current || !gameState.isPlaying || gameState.isGameOver || isEliminated) {
+      if (groupRef.current) {
+        groupRef.current.position.y = position[1]; // Always keep above ground
+      }
+      return;
+    }
 
     // Check if doll is looking (red light)
     const isRedLight = gameState.isDollLooking; // You'll need to add this to your game state
@@ -61,7 +66,7 @@ const AIPlayer: React.FC<AIPlayerProps> = ({ position, color, index }) => {
         
         // Animate walking
         const time = Date.now() * 0.005;
-        const height = Math.sin(time) * 0.1;
+        const height = Math.max(0, Math.sin(time) * 0.1); // Prevent negative height
         groupRef.current.position.y = position[1] + height;
       } else {
         setIsMoving(false);
