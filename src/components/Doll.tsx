@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameContext } from '../context/GameContext';
 import { playAudio } from '../utils/audio';
+import Model from './Model';
 
 interface DollProps {
   position: [number, number, number];
@@ -48,12 +49,8 @@ const Doll: React.FC<DollProps> = ({ position }) => {
   useFrame((_, delta) => {
     if (!gameState.isPlaying || gameState.isGameOver) return;
     
-    if (headRef.current) {
+    if (headRef.current && groupRef.current) {
       // Update turn timer
-      // When doll is looking (red light), turn duration is 5-10 seconds
-      // When doll is not looking (green light), turn duration is 0.8-1.5 seconds
-      // When doll is looking at players (red light), it stays looking for 5-10 seconds
-      // When doll is facing away (green light), it stays turned for 2-2.7 seconds
       const turnDuration = !gameState.isDollLooking ? 5 + Math.random() * 5 : 2 + Math.random() * 0.7;
       
       turnTimer.current += delta;
@@ -79,15 +76,17 @@ const Doll: React.FC<DollProps> = ({ position }) => {
       
       // Smooth rotation when turning
       if (rotationDirection !== 0) {
-        const targetRotation = rotationDirection > 0 ? 0 : Math.PI;
-        const currentRotation = headRef.current.rotation.y;
+        // When doll is looking (red light), face toward players (negative Z direction)
+        // When doll is not looking (green light), face away from players (positive Z direction)
+        const targetRotation = gameState.isDollLooking ? 0 : Math.PI;
+        const currentRotation = groupRef.current.rotation.y;
         const rotationStep = delta * 3; // Speed of turning
         
         if (Math.abs(targetRotation - currentRotation) < rotationStep) {
-          headRef.current.rotation.y = targetRotation;
+          groupRef.current.rotation.y = targetRotation;
           setRotationDirection(0);
         } else {
-          headRef.current.rotation.y += rotationDirection > 0 
+          groupRef.current.rotation.y += rotationDirection > 0 
             ? rotationStep 
             : -rotationStep;
         }
@@ -97,67 +96,82 @@ const Doll: React.FC<DollProps> = ({ position }) => {
   
   return (
     <group ref={groupRef} position={position}>
-      {/* Body */}
-      <mesh position={[0, 3, 0]} castShadow>
-        <cylinderGeometry args={[1, 1.5, 4, 16]} />
-        <meshStandardMaterial color="#ffa500" />
-      </mesh>
+      {/* Use the 3D model if available, fallback to basic shapes */}
+      <Model 
+        path="/models/doll.glb"
+        scale={2}
+        position={[0, 0, 0]}
+        castShadow
+      />
       
-      {/* Dress/Skirt */}
-      <mesh position={[0, 1.2, 0]} castShadow>
-        <cylinderGeometry args={[2, 1.5, 2.5, 16]} />
-        <meshStandardMaterial color="#ff4500" />
-      </mesh>
-      
-      {/* Head */}
-      <group ref={headRef} position={[0, 5.5, 0]}>
-        <mesh castShadow>
-          <sphereGeometry args={[1.2, 32, 32]} />
-          <meshStandardMaterial color="#ffe4c4" emissive={flash === 'red' ? '#ff0000' : flash === 'green' ? '#00ff00' : '#000000'} emissiveIntensity={flash ? 1 : 0} />
+      {/* Fallback basic shapes if model fails to load */}
+      <group visible={false}>
+        {/* Body */}
+        <mesh position={[0, 3, 0]} castShadow>
+          <cylinderGeometry args={[1, 1.5, 4, 16]} />
+          <meshStandardMaterial color="#ffa500" />
         </mesh>
         
-        {/* Eyes */}
-        <mesh position={[-0.4, 0.2, 1]} castShadow>
-          <sphereGeometry args={[0.2, 32, 32]} />
-          <meshStandardMaterial color="black" />
-        </mesh>
-        <mesh position={[0.4, 0.2, 1]} castShadow>
-          <sphereGeometry args={[0.2, 32, 32]} />
-          <meshStandardMaterial color="black" />
+        {/* Dress/Skirt */}
+        <mesh position={[0, 1.2, 0]} castShadow>
+          <cylinderGeometry args={[2, 1.5, 2.5, 16]} />
+          <meshStandardMaterial color="#ff4500" />
         </mesh>
         
-        {/* Mouth */}
-        <mesh position={[0, -0.3, 1]} castShadow>
-          <boxGeometry args={[0.8, 0.1, 0.1]} />
-          <meshStandardMaterial color="black" />
+        {/* Head */}
+        <group ref={headRef} position={[0, 5.5, 0]}>
+          <mesh castShadow>
+            <sphereGeometry args={[1.2, 32, 32]} />
+            <meshStandardMaterial 
+              color="#ffe4c4" 
+              emissive={flash === 'red' ? '#ff0000' : flash === 'green' ? '#00ff00' : '#000000'} 
+              emissiveIntensity={flash ? 1 : 0} 
+            />
+          </mesh>
+          
+          {/* Eyes */}
+          <mesh position={[-0.4, 0.2, 1]} castShadow>
+            <sphereGeometry args={[0.2, 32, 32]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
+          <mesh position={[0.4, 0.2, 1]} castShadow>
+            <sphereGeometry args={[0.2, 32, 32]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
+          
+          {/* Mouth */}
+          <mesh position={[0, -0.3, 1]} castShadow>
+            <boxGeometry args={[0.8, 0.1, 0.1]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
+          
+          {/* Hair */}
+          <mesh position={[0, 0.5, 0]} castShadow>
+            <cylinderGeometry args={[1.3, 1.3, 0.5, 16]} />
+            <meshStandardMaterial color="black" />
+          </mesh>
+        </group>
+        
+        {/* Arms */}
+        <mesh position={[-1.5, 3, 0]} rotation={[0, 0, -Math.PI / 4]} castShadow>
+          <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
+          <meshStandardMaterial color="#ffe4c4" />
+        </mesh>
+        <mesh position={[1.5, 3, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
+          <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
+          <meshStandardMaterial color="#ffe4c4" />
         </mesh>
         
-        {/* Hair */}
-        <mesh position={[0, 0.5, 0]} castShadow>
-          <cylinderGeometry args={[1.3, 1.3, 0.5, 16]} />
-          <meshStandardMaterial color="black" />
+        {/* Legs */}
+        <mesh position={[-0.7, -0.5, 0]} castShadow>
+          <cylinderGeometry args={[0.3, 0.3, 2, 16]} />
+          <meshStandardMaterial color="#ffe4c4" />
+        </mesh>
+        <mesh position={[0.7, -0.5, 0]} castShadow>
+          <cylinderGeometry args={[0.3, 0.3, 2, 16]} />
+          <meshStandardMaterial color="#ffe4c4" />
         </mesh>
       </group>
-      
-      {/* Arms */}
-      <mesh position={[-1.5, 3, 0]} rotation={[0, 0, -Math.PI / 4]} castShadow>
-        <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
-        <meshStandardMaterial color="#ffe4c4" />
-      </mesh>
-      <mesh position={[1.5, 3, 0]} rotation={[0, 0, Math.PI / 4]} castShadow>
-        <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
-        <meshStandardMaterial color="#ffe4c4" />
-      </mesh>
-      
-      {/* Legs */}
-      <mesh position={[-0.7, -0.5, 0]} castShadow>
-        <cylinderGeometry args={[0.3, 0.3, 2, 16]} />
-        <meshStandardMaterial color="#ffe4c4" />
-      </mesh>
-      <mesh position={[0.7, -0.5, 0]} castShadow>
-        <cylinderGeometry args={[0.3, 0.3, 2, 16]} />
-        <meshStandardMaterial color="#ffe4c4" />
-      </mesh>
       
       {/* Red/Green Light Indicator */}
       <pointLight

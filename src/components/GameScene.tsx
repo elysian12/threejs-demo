@@ -20,17 +20,14 @@ const GameScene: React.FC<GameSceneProps> = ({ cameraMode }) => {
   useFrame(() => {
     if (!cameraRef.current) return;
     if (cameraMode === 'character' && playerRef.current && gameState.isPlaying) {
-      const targetPosition = new THREE.Vector3(
-        playerRef.current.position.x,
-        playerRef.current.position.y + 5,
-        playerRef.current.position.z + 10
-      );
-      cameraRef.current.position.lerp(targetPosition, 0.1);
-      cameraRef.current.lookAt(
-        playerRef.current.position.x,
-        playerRef.current.position.y,
-        playerRef.current.position.z
-      );
+      const player = playerRef.current;
+      // Always face forward (negative Z)
+      player.rotation.y = 0;
+      // Third-person camera: behind and above the player
+      const cameraOffset = new THREE.Vector3(0, 5, 15); // [x, y, z]
+      const camPos = player.position.clone().add(cameraOffset);
+      cameraRef.current.position.lerp(camPos, 0.2);
+      cameraRef.current.lookAt(player.position.x, player.position.y + 3.5, player.position.z);
     }
   });
   
@@ -39,8 +36,8 @@ const GameScene: React.FC<GameSceneProps> = ({ cameraMode }) => {
       <PerspectiveCamera
         ref={cameraRef}
         makeDefault
-        position={[0, 5, 15]}
-        fov={60}
+        position={[0, 3.5, 5]} // Start at head height
+        fov={75}
       />
       {cameraMode === 'world' && (
         <OrbitControls
@@ -54,8 +51,9 @@ const GameScene: React.FC<GameSceneProps> = ({ cameraMode }) => {
         />
       )}
       <Environment />
-      <Doll position={[0, 2, -60]} />
-      <Player position={[0, 1, 5]} ref={playerRef} />
+      <Doll position={[0, 3, 35]} />
+      {/* Hide player model in first-person mode */}
+      <Player position={[0, 1, -30]} ref={playerRef} visible={cameraMode !== 'character'} />
       <Guards />
       
       {/* Lighting */}
