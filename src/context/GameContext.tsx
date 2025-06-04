@@ -78,10 +78,26 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   
   const checkPlayerMovement = useCallback(() => {
     if (gameState.isMoving) {
-      // Play gun shot sound immediately
-      const gunShotAudio = new Audio('/sounds/gunshot.mp3');
-      gunShotAudio.volume = 0.8;
-      gunShotAudio.play().catch(e => console.log('Audio play error:', e));
+      // Professional 3-shot sequence with realistic timing
+      
+      // Shot 1 - immediate
+      const gunShot1 = new Audio('/sounds/gunshot.mp3');
+      gunShot1.volume = 0.9;
+      gunShot1.play().catch(e => console.log('Audio play error:', e));
+      
+      // Shot 2 - after 200ms
+      setTimeout(() => {
+        const gunShot2 = new Audio('/sounds/gunshot.mp3');
+        gunShot2.volume = 0.85;
+        gunShot2.play().catch(e => console.log('Audio play error:', e));
+      }, 200);
+      
+      // Shot 3 - after 400ms
+      setTimeout(() => {
+        const gunShot3 = new Audio('/sounds/gunshot.mp3');
+        gunShot3.volume = 0.8;
+        gunShot3.play().catch(e => console.log('Audio play error:', e));
+      }, 400);
       
       // Add screen flash effect
       const flashElement = document.createElement('div');
@@ -91,19 +107,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       flashElement.style.width = '100vw';
       flashElement.style.height = '100vh';
       flashElement.style.backgroundColor = 'red';
-      flashElement.style.opacity = '0.8';
+      flashElement.style.opacity = '0.9';
       flashElement.style.zIndex = '9999';
       flashElement.style.pointerEvents = 'none';
-      flashElement.style.transition = 'opacity 0.3s ease-out';
+      flashElement.style.transition = 'opacity 0.5s ease-out';
       document.body.appendChild(flashElement);
       
-      // Fade out the flash
+      // Fade out the flash over 2 seconds
       setTimeout(() => {
         flashElement.style.opacity = '0';
         setTimeout(() => {
           document.body.removeChild(flashElement);
-        }, 300);
-      }, 100);
+        }, 500);
+      }, 200);
       
       setGameState(prev => ({
         ...prev,
@@ -111,12 +127,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         hasWon: false,
       }));
       
-      // Play elimination sound after gun shot
+      // Play elimination sound after gun shots
       setTimeout(() => {
         const audio = new Audio('/sounds/elimination.mp3');
-        audio.volume = 0.5;
+        audio.volume = 0.6;
         audio.play().catch(e => console.log('Audio play error:', e));
-      }, 500);
+      }, 1000);
     }
   }, [gameState.isMoving]);
   

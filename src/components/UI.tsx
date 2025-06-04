@@ -1,5 +1,5 @@
-import React from 'react';
-import { Play, RotateCcw, ArrowUp, Camera } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, RotateCcw, ArrowUp, Camera, Skull } from 'lucide-react';
 import { useGameContext } from '../context/GameContext';
 
 interface UIProps {
@@ -9,6 +9,24 @@ interface UIProps {
 
 const UI: React.FC<UIProps> = ({ onToggleCamera, cameraMode }) => {
   const { gameState, startGame, resetGame, movePlayer, stopPlayer } = useGameContext();
+  const [showGameOver, setShowGameOver] = useState(false);
+  
+  // Delay game over screen to show after death animation
+  useEffect(() => {
+    if (gameState.isGameOver && !gameState.hasWon) {
+      // Show game over screen after 4.5 seconds (after death animation completes)
+      const timer = setTimeout(() => {
+        setShowGameOver(true);
+      }, 4500);
+      return () => clearTimeout(timer);
+    } else if (gameState.isGameOver && gameState.hasWon) {
+      // Show immediately for win condition
+      setShowGameOver(true);
+    } else {
+      // Reset when game resets
+      setShowGameOver(false);
+    }
+  }, [gameState.isGameOver, gameState.hasWon]);
   
   return (
     <div className="ui-overlay flex flex-col items-center justify-between p-6">
@@ -68,24 +86,52 @@ const UI: React.FC<UIProps> = ({ onToggleCamera, cameraMode }) => {
         </div>
       )}
       
-      {/* Game Over Screen */}
-      {gameState.isGameOver && (
-        <div className="game-over fixed inset-0 flex items-center justify-center">
-          <div className="text-center p-8 rounded-lg">
-            <h2 className="text-4xl font-bold mb-4">
-              {gameState.hasWon ? 'You Won!' : 'Game Over'}
-            </h2>
-            <p className="text-xl mb-6">
-              {gameState.hasWon 
-                ? 'You successfully reached the finish line!' 
-                : 'You were caught moving during Red Light!'}
-            </p>
+      {/* Enhanced Game Over Screen */}
+      {gameState.isGameOver && showGameOver && (
+        <div className={`game-over fixed inset-0 flex items-center justify-center ${gameState.hasWon ? 'game-over-win' : 'game-over-death'}`}>
+          <div className="text-center p-8 rounded-lg max-w-lg">
+            {gameState.hasWon ? (
+              <>
+                <div className="text-6xl mb-6">🎉</div>
+                <h2 className="text-5xl font-bold mb-4 text-green-400">
+                  VICTORY!
+                </h2>
+                <p className="text-xl mb-6 text-green-300">
+                  You successfully reached the finish line!<br/>
+                  <span className="text-sm text-gray-300">You survived the Red Light, Green Light game!</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="text-6xl mb-6">
+                  <Skull className="mx-auto text-red-500" size={80} />
+                </div>
+                <h2 className="text-5xl font-bold mb-4 text-red-500 blood-drip">
+                  ELIMINATED
+                </h2>
+                <p className="text-xl mb-4 text-red-300">
+                  You were caught moving during Red Light!
+                </p>
+                <p className="text-lg mb-6 text-gray-300">
+                  <span className="text-red-400">⚠️ CAUSE OF DEATH:</span><br/>
+                  Multiple gunshot wounds<br/>
+                  <span className="text-sm text-gray-400">The guards showed no mercy...</span>
+                </p>
+              </>
+            )}
             <button
-              onClick={resetGame}
-              className="btn flex items-center justify-center mx-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg"
+              onClick={() => {
+                setShowGameOver(false);
+                resetGame();
+              }}
+              className={`btn flex items-center justify-center mx-auto font-bold py-3 px-6 rounded-lg ${
+                gameState.hasWon 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-red-600 hover:bg-red-700 text-white border-2 border-red-400'
+              }`}
             >
               <RotateCcw className="mr-2" size={20} />
-              Play Again
+              {gameState.hasWon ? 'Play Again' : 'Try Again'}
             </button>
           </div>
         </div>
