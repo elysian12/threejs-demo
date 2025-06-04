@@ -96,7 +96,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       playerPosition: position,
     }));
     
-    if (position <= -20) {
+    if (position <= -80) {
       setGameState(prev => ({
         ...prev,
         isGameOver: true,

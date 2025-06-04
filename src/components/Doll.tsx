@@ -11,12 +11,36 @@ interface DollProps {
 const Doll: React.FC<DollProps> = ({ position }) => {
   const groupRef = useRef<THREE.Group>(null);
   const headRef = useRef<THREE.Group>(null);
+  const redLightAudioRef = useRef<HTMLAudioElement | null>(null);
+  const turnTimer = useRef(0);
   const [rotationDirection, setRotationDirection] = useState(1);
   const { gameState, setDollLooking } = useGameContext();
   
-  // Memoize the sound callback
-  const playDollSound = useCallback(() => {
-    playAudio('DOLL_SONG', 0.5);
+  // Play green light audio once
+  const playGreenLight = useCallback(() => {
+    playAudio('GREEN_LIGHT', 0.5);
+  }, []);
+
+  // Play red light audio on repeat
+  const playRedLight = useCallback(() => {
+    if (redLightAudioRef.current) {
+      redLightAudioRef.current.pause();
+      redLightAudioRef.current.currentTime = 0;
+    }
+    const audio = new Audio('/sounds/red-light.mp3');
+    audio.volume = 0.5;
+    // audio.loop = true;
+    audio.play().catch(e => console.log('Audio play error:', e));
+    redLightAudioRef.current = audio;
+  }, []);
+
+  // Stop red light audio
+  const stopRedLight = useCallback(() => {
+    if (redLightAudioRef.current) {
+      redLightAudioRef.current.pause();
+      redLightAudioRef.current.currentTime = 0;
+      redLightAudioRef.current = null;
+    }
   }, []);
   
   // Doll turning mechanism
@@ -25,16 +49,27 @@ const Doll: React.FC<DollProps> = ({ position }) => {
     
     if (headRef.current) {
       // Update turn timer
-      const turnDuration = gameState.isDollLooking ? 3 : 5 + Math.random() * 2;
+      // When doll is looking (red light), turn duration is 5-10 seconds
+      // When doll is not looking (green light), turn duration is 0.8-1.5 seconds
+      // When doll is looking at players (red light), it stays looking for 5-10 seconds
+      // When doll is facing away (green light), it stays turned for 2-2.7 seconds
+      const turnDuration = !gameState.isDollLooking ? 5 + Math.random() * 5 : 2 + Math.random() * 0.7;
       
-      // Every 3-7 seconds, change direction (randomly)
-      if (delta > turnDuration) {
-        // Play sound when turning
-        playDollSound();
-        
+      turnTimer.current += delta;
+      if (turnTimer.current > turnDuration) {
         // Change light state and reset timer
         setDollLooking(!gameState.isDollLooking);
         setRotationDirection(gameState.isDollLooking ? 1 : -1);
+        // Play audio for light change
+        if (!gameState.isDollLooking) {
+          // Turning to red light
+          playRedLight();
+        } else {
+          // Turning to green light
+          stopRedLight();
+          playGreenLight();
+        }
+        turnTimer.current = 0; // Reset timer
       }
       
       // Smooth rotation when turning

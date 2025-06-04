@@ -39,7 +39,7 @@ const GameScene = () => {
         fov={60}
       />
       <Environment />
-      <Doll position={[0, 0, -30]} />
+      <Doll position={[0, 0, -60]} />
       <Player position={[0, 0, 5]} ref={playerRef} />
       <Guards />
       

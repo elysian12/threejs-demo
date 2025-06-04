@@ -21,7 +21,7 @@ const Environment = () => {
         position={[0, 0, 0]}
         receiveShadow
       >
-        <planeGeometry args={[100, 100]} />
+        <planeGeometry args={[100, 250]} />
         <meshStandardMaterial 
           map={groundTexture} 
           roughness={1}
@@ -39,12 +39,12 @@ const Environment = () => {
       {/* Walls */}
       <Wall position={[-50, 10, 0]} rotation={[0, Math.PI / 2, 0]} />
       <Wall position={[50, 10, 0]} rotation={[0, -Math.PI / 2, 0]} />
-      <Wall position={[0, 10, -50]} rotation={[0, 0, 0]} />
-      <Wall position={[0, 10, 50]} rotation={[0, Math.PI, 0]} />
+      <Wall position={[0, 10, -125]} rotation={[0, 0, 0]} />
+      <Wall position={[0, 10, 125]} rotation={[0, Math.PI, 0]} />
       
       {/* Finish Line */}
       <mesh
-        position={[0, 0.01, -20]}
+        position={[0, 0.01, -80]}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
       >
