@@ -4,7 +4,6 @@ import { PerspectiveCamera } from '@react-three/drei';
 import * as THREE from 'three';
 import Doll from './Doll';
 import Player from './Player';
-import AIPlayer from './AIPlayer';
 import Environment from './Environment';
 import Guards from './Guards';
 import { useGameContext } from '../context/GameContext';
@@ -14,16 +13,6 @@ const GameScene = () => {
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const playerRef = useRef<THREE.Group>(null);
 
-  // Generate random positions for AI players
-  const aiPlayers = Array.from({ length: 20 }, (_, i) => ({
-    position: [
-      (Math.random() - 0.5) * 30,
-      0,
-      Math.random() * 10 + 5
-    ] as [number, number, number],
-    color: `hsl(${Math.random() * 360}, 70%, 50%)`
-  }));
-  
   useFrame(() => {
     if (cameraRef.current && playerRef.current && gameState.isPlaying) {
       const targetPosition = new THREE.Vector3(
@@ -53,15 +42,6 @@ const GameScene = () => {
       <Doll position={[0, 0, -30]} />
       <Player position={[0, 0, 5]} ref={playerRef} />
       <Guards />
-      
-      {/* AI Players */}
-      {aiPlayers.map((player, index) => (
-        <AIPlayer
-          key={index}
-          position={player.position}
-          color={player.color}
-        />
-      ))}
       
       {/* Lighting */}
       <directionalLight

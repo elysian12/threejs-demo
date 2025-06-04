@@ -56,7 +56,7 @@ const Environment = () => {
 };
 
 const Wall = ({ position, rotation }: { position: [number, number, number], rotation: [number, number, number] }) => {
-  const wallTexture = new THREE.TextureLoader().load('https://images.pexels.com/photos/1693022/pexels-photo-1693022.jpeg');
+  const wallTexture = new THREE.TextureLoader().load('https://images.pexels.com/photos/207142/pexels-photo-207142.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
   wallTexture.wrapS = THREE.RepeatWrapping;
   wallTexture.wrapT = THREE.RepeatWrapping;
   wallTexture.repeat.set(5, 1);

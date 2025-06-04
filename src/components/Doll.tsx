@@ -1,7 +1,8 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameContext } from '../context/GameContext';
+import { playAudio } from '../utils/audio';
 
 interface DollProps {
   position: [number, number, number];
@@ -9,11 +10,14 @@ interface DollProps {
 
 const Doll: React.FC<DollProps> = ({ position }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const headRef = useRef<THREE.Mesh>(null);
-  const [redLight, setRedLight] = useState(false);
-  const [turnTimer, setTurnTimer] = useState(0);
+  const headRef = useRef<THREE.Group>(null);
   const [rotationDirection, setRotationDirection] = useState(1);
-  const { gameState, checkPlayerMovement } = useGameContext();
+  const { gameState, setDollLooking } = useGameContext();
+  
+  // Memoize the sound callback
+  const playDollSound = useCallback(() => {
+    playAudio('DOLL_SONG', 0.5);
+  }, []);
   
   // Doll turning mechanism
   useFrame((_, delta) => {
@@ -21,32 +25,17 @@ const Doll: React.FC<DollProps> = ({ position }) => {
     
     if (headRef.current) {
       // Update turn timer
-      setTurnTimer(prev => {
-        const newTimer = prev + delta;
+      const turnDuration = gameState.isDollLooking ? 3 : 5 + Math.random() * 2;
+      
+      // Every 3-7 seconds, change direction (randomly)
+      if (delta > turnDuration) {
+        // Play sound when turning
+        playDollSound();
         
-        // Every 3-7 seconds, change direction (randomly)
-        if (newTimer > (redLight ? 3 : 5 + Math.random() * 2)) {
-          // Play sound when turning
-          const audio = new Audio(redLight 
-            ? '/sounds/doll-song.mp3' 
-            : '/sounds/doll-laugh.mp3');
-          audio.volume = 0.5;
-          audio.play().catch(e => console.log('Audio play error:', e));
-          
-          // Change light state and reset timer
-          setRedLight(!redLight);
-          setRotationDirection(redLight ? 1 : -1);
-          
-          // Check if players are moving during red light
-          if (!redLight) {
-            checkPlayerMovement();
-          }
-          
-          return 0;
-        }
-        
-        return newTimer;
-      });
+        // Change light state and reset timer
+        setDollLooking(!gameState.isDollLooking);
+        setRotationDirection(gameState.isDollLooking ? 1 : -1);
+      }
       
       // Smooth rotation when turning
       if (rotationDirection !== 0) {
@@ -135,7 +124,7 @@ const Doll: React.FC<DollProps> = ({ position }) => {
         position={[0, 7, 1]}
         intensity={10}
         distance={5}
-        color={redLight ? '#ff0000' : '#00ff00'}
+        color={gameState.isDollLooking ? '#ff0000' : '#00ff00'}
         castShadow
       />
     </group>
