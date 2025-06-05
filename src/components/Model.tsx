@@ -35,6 +35,5 @@ const Model: React.FC<ModelProps> = ({
 useGLTF.preload('/models/guard.glb');
 useGLTF.preload('/models/player.glb');
 useGLTF.preload('/models/doll.glb');
-useGLTF.preload('/models/tower.glb');
 
 export default Model; 

@@ -8,6 +8,7 @@ interface GameState {
   playerPosition: number;
   moveDirection: 'forward' | 'backward' | 'left' | 'right' | null;
   isDollLooking: boolean;
+  conversationCompleted: boolean;
 }
 
 interface GameContextType {
@@ -19,6 +20,7 @@ interface GameContextType {
   checkPlayerMovement: () => void;
   setPlayerPosition: (position: number) => void;
   setDollLooking: (isLooking: boolean) => void;
+  completeConversation: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -32,6 +34,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playerPosition: -30,
     moveDirection: null,
     isDollLooking: false,
+    conversationCompleted: false,
   });
   
   const startGame = useCallback(() => {
@@ -57,7 +60,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       playerPosition: -30,
       moveDirection: null,
       isDollLooking: false,
+      conversationCompleted: false,
     });
+  }, []);
+
+  const completeConversation = useCallback(() => {
+    setGameState(prev => ({
+      ...prev,
+      conversationCompleted: true,
+    }));
   }, []);
   
   const movePlayer = useCallback((direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -171,6 +182,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkPlayerMovement,
     setPlayerPosition,
     setDollLooking,
+    completeConversation,
   };
   
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
