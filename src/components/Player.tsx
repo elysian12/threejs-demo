@@ -8,9 +8,10 @@ import { playAudio } from '../utils/audio';
 interface PlayerProps {
   position: [number, number, number];
   visible?: boolean;
+  playbackSpeed?: number;
 }
 
-const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true }, ref) => {
+const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true, playbackSpeed = 1 }, ref) => {
   const internalRef = useRef<THREE.Group>(null);
   const groupRef = (ref as React.RefObject<THREE.Group>) || internalRef;
   const { gameState, movePlayer, stopPlayer, setPlayerPosition } = useGameContext();
@@ -84,26 +85,41 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
   // Animation logic
   useEffect(() => {
     if (!actions) return;
+    const walkAction = actions['Armature|mixamo.com|Layer0'];
     if (isEliminated) {
       // Stop all animations when eliminated
       Object.values(actions).forEach(action => action?.stop());
     } else if (gameState.isMoving) {
-      if (actions['Walk']) {
-        actions['Walk'].reset().fadeIn(0.2).play();
-        if (actions['Idle']) actions['Idle'].fadeOut(0.2);
+      if (walkAction) {
+        // Smoother transition to walk animation
+        walkAction.reset().fadeIn(0.3).play();
+        if (actions['Idle']) actions['Idle'].fadeOut(0.3);
+        // Use playbackSpeed prop for animation speed
+        walkAction.timeScale = playbackSpeed;
       }
     } else {
       if (actions['Idle']) {
-        actions['Idle'].reset().fadeIn(0.2).play();
-        if (actions['Walk']) actions['Walk'].fadeOut(0.2);
-      } else if (actions['Walk']) {
-        actions['Walk'].fadeOut(0.2);
+        // Smoother transition to idle animation
+        actions['Idle'].reset().fadeIn(0.3).play();
+        if (walkAction) walkAction.fadeOut(0.3);
+      } else if (walkAction) {
+        walkAction.fadeOut(0.3);
       }
     }
-  }, [gameState.isMoving, actions, isEliminated]);
+  }, [gameState.isMoving, actions, isEliminated, playbackSpeed]);
+
+  // Log available animation actions for debugging
+  useEffect(() => {
+    if (actions) {
+      console.log('Available animation actions:', Object.keys(actions));
+    }
+  }, [actions]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+
+    const yOffset = 1; // Adjust this value if needed to keep feet on the floor
+    const baseY = position[1] + yOffset;
 
     // Extended death animation - 4 seconds total
     if (isEliminated && deathAnimation > 0) {
@@ -115,21 +131,21 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
         // Stage 1 (0-1 second): Initial impact and violent shake
         const impactProgress = (4 - deathAnimation); // 0 to 1
         groupRef.current.rotation.x = impactProgress * Math.PI / 6;
-        groupRef.current.position.y = position[1] + (Math.random() - 0.5) * 0.8; // Violent convulsions
+        groupRef.current.position.y = baseY + (Math.random() - 0.5) * 0.8; // Violent convulsions
         groupRef.current.position.x = position[0] + (Math.random() - 0.5) * 1.2;
         groupRef.current.position.z += (Math.random() - 0.5) * 0.5;
       } else if (deathAnimation > 2) {
         // Stage 2 (1-2 seconds): Falling forward dramatically
         const fallProgress = (3 - deathAnimation); // 0 to 1
         groupRef.current.rotation.x = (Math.PI / 6) + fallProgress * (Math.PI / 2.5);
-        groupRef.current.position.y = position[1] - fallProgress * 1.2;
+        groupRef.current.position.y = baseY - fallProgress * 1.2;
         groupRef.current.position.x = position[0] + (Math.random() - 0.5) * 0.4; // Reduced convulsions
         groupRef.current.position.z += fallProgress * 0.3; // Fall slightly forward
       } else if (deathAnimation > 1) {
         // Stage 3 (2-3 seconds): Final collapse to ground
         const collapseProgress = (2 - deathAnimation); // 0 to 1
         groupRef.current.rotation.x = (Math.PI / 6) + (Math.PI / 2.5) + collapseProgress * (Math.PI / 4);
-        groupRef.current.position.y = position[1] - 1.2 - collapseProgress * 0.8; // Completely flat
+        groupRef.current.position.y = baseY - 1.2 - collapseProgress * 0.8; // Completely flat
         groupRef.current.position.x = position[0]; // Stop shaking
         groupRef.current.position.z += 0.3; // Final forward position
         groupRef.current.rotation.z = collapseProgress * (Math.PI / 8); // Side tilt
@@ -137,7 +153,7 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
       } else {
         // Stage 4 (3-4 seconds): Death stillness
         groupRef.current.rotation.x = Math.PI * 0.85; // Almost face down
-        groupRef.current.position.y = position[1] - 2; // Flat on ground
+        groupRef.current.position.y = baseY - 2; // Flat on ground
         groupRef.current.position.x = position[0];
         groupRef.current.position.z += 0.3;
         groupRef.current.rotation.z = Math.PI / 8;
@@ -149,7 +165,7 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
 
     if (!gameState.isPlaying || gameState.isGameOver || gameState.isDollLooking || isEliminated) {
       if (groupRef.current && !isEliminated) {
-        groupRef.current.position.y = position[1]; // Always keep above ground
+        groupRef.current.position.y = baseY; // Always keep above ground
       }
       return;
     }
@@ -170,15 +186,24 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
       // Update player position in game state
       setPlayerPosition(groupRef.current.position.z);
       
-      // Animate walking (fallback if no animation)
-      if (!actions || (!actions['Walk'] && !actions['Idle'])) {
-        const time = Date.now() * 0.005;
-        const height = Math.max(0, Math.sin(time) * 0.1);
-        groupRef.current.position.y = position[1] + height;
-      }
+      // Enhanced walking animation with body sway and head bob
+      const time = Date.now() * 0.005;
       
-      // Play footstep sound
-      if (Math.sin(Date.now() * 0.01) > 0.9) {
+      // Body sway - subtle side-to-side movement
+      const swayAmount = 0.05;
+      groupRef.current.rotation.y = Math.sin(time * 0.8) * swayAmount;
+      
+      // Head bob - vertical movement
+      const bobAmount = 0.1;
+      const bobHeight = Math.sin(time * 2) * bobAmount;
+      groupRef.current.position.y = baseY + bobHeight;
+      
+      // Slight body tilt based on movement
+      const tiltAmount = 0.02;
+      groupRef.current.rotation.z = Math.sin(time * 0.8) * tiltAmount;
+      
+      // Play footstep sound with improved timing
+      if (Math.sin(time * 2) > 0.9) {
         playFootstep();
       }
       
@@ -186,6 +211,11 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
       if (groupRef.current.position.z >= 30) {
         playAudio('WIN', 0.5);
       }
+    } else {
+      // Reset rotations when not moving
+      groupRef.current.rotation.y = 0;
+      groupRef.current.rotation.z = 0;
+      groupRef.current.position.y = baseY;
     }
   });
 
@@ -306,12 +336,12 @@ const Player = forwardRef<THREE.Group, PlayerProps>(({ position, visible = true 
           <sphereGeometry args={[0.5, 32, 32]} />
           <meshStandardMaterial color="#FFE4C4" />
         </mesh>
-        {/* Arms */}
-        <mesh position={[-0.7, 1, 0]} rotation={[0, 0, -Math.PI / 6]} castShadow>
+        {/* Arms - rotated downward and closer to body */}
+        <mesh position={[-0.45, 1, 0]} rotation={[0, 0, -Math.PI / 2.2]} castShadow>
           <capsuleGeometry args={[0.2, 0.8, 4, 8]} />
           <meshStandardMaterial color="#4682B4" />
         </mesh>
-        <mesh position={[0.7, 1, 0]} rotation={[0, 0, Math.PI / 6]} castShadow>
+        <mesh position={[0.45, 1, 0]} rotation={[0, 0, Math.PI / 2.2]} castShadow>
           <capsuleGeometry args={[0.2, 0.8, 4, 8]} />
           <meshStandardMaterial color="#1E3A8A" />
         </mesh>

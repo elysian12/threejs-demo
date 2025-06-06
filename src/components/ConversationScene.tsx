@@ -223,7 +223,7 @@ const ConversationScene: React.FC<ConversationSceneProps> = ({ onConversationEnd
         setCurrentText('');
         
         // Pause between speakers based on emotion and content
-        let pauseDuration = 2000; // Base pause
+        let pauseDuration = 200; // Base pause
         
         // Adjust pause based on emotion and content
         if (line.emotion === 'scared' || line.emotion === 'nervous') {
